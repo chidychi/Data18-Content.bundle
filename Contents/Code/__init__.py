@@ -4,7 +4,7 @@ import random
 
 # this code was borrowed from the Excalibur Films Agent. April 9 2013
 # URLS
-VERSION_NO = '1.2013.06.02.1'
+VERSION_NO = '1.2014.06.08.1'
 EXC_BASEURL = 'http://www.data18.com/'
 EXC_SEARCH_MOVIES = EXC_BASEURL + 'search/?k=%s&t=0'
 EXC_MOVIE_INFO = EXC_BASEURL + 'content/%s'
@@ -15,11 +15,77 @@ def Start():
   HTTP.CacheTime = CACHE_1DAY
   HTTP.SetHeader('User-agent', 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.2; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0)')
 
+
+def search_na(results, media_title, year, lang, na_url_part):
+  """
+  Since N.A. scenes are not appearing in the search we need to do a bit of trickery to get them.
+  """
+  Log('Alternative search for N.A. websites')
+  actors = media_title.split(' in ')[0].split(',')
+  actors_url_parts = media_title.split(' in ')[0].lower().replace(' ', '_').split(',')
+
+  # Take the first actor and the website name to search
+  query_actor = String.URLEncode(String.StripDiacritics(actors_url_parts[0].replace('-','')))
+  searchURL = EXC_BASEURL + query_actor + '/sites/' + na_url_part + '.html'
+  Log('Search URL: ' + searchURL)
+
+  search_results = HTML.ElementFromURL(searchURL)
+
+  count = 0
+  for movie in search_results.xpath('//div[@class="bscene2 genmed"]//p[@class="line1"]//a[@class="gen11 bold"]'):
+    movie_HREF = movie.get("href").strip()
+    Log('Movie HREF: ' + movie_HREF)
+    current_name = movie.text_content().strip()
+    Log('New title: ' + current_name)
+    current_ID = movie.get('href').split('/',4)[4]
+    Log('New ID: ' + current_ID)
+    
+    try:
+      movieResults = HTML.ElementFromURL(movie_HREF)
+      curyear = movieResults.xpath('//p[contains(text(),"Date")]//a')[0].get('href')
+      curyear_group = re.search(r'(\d{8})',curyear)
+      if curyear_group is None:
+        Log('Date: No date found')
+        score = 100 - Util.LevenshteinDistance(title.lower(), curName.lower())
+        curyear = ''
+        curdate = ''
+      else:
+        curdate = curyear_group.group(0)
+        curdate = Datetime.ParseDate(curdate).date()
+        curyear = str(curdate.year)
+        curmonth = str(curdate.month)
+        curday = str(curdate.day)
+        curdate = str(curdate)
+        Log('Found Date = ' + curdate)
+        score = 100 - Util.LevenshteinDistance(media_title.lower(), current_name.lower()) - Util.LevenshteinDistance(year, curyear)
+        Log('It Worked ************************************************************')
+    except (IndexError):
+      score = 100 - Util.LevenshteinDistance(media_title.lower(), current_name.lower())
+      curyear = ''
+      curdate = ''
+      Log('Date: No date found (Exception)')
+    if score >= 45:
+      if current_name.count(', The'):
+        current_name = 'The ' + current_name.replace(', The','',1)
+      if curdate:
+        current_name = current_name + ' [' + curdate + ']'
+
+      Log('Found:')
+      Log('    Date: ' + curdate)
+      Log('    ID: ' + current_ID)
+      Log('    Title: ' + current_name)
+      Log('    URL: ' + movie_HREF)
+      results.Append(MetadataSearchResult(id = current_ID, name = current_name, score = score, lang = lang))
+    count += 1
+  results.Sort('score', descending=True)
+  
+
 class EXCAgent(Agent.Movies):
   name = 'Data18-Content'
   languages = [Locale.Language.English]
   accepts_from = ['com.plexapp.agents.localmedia']
   primary_provider = True
+
 
   def search(self, results, media, lang):
     Log('Data18 Version : ' + VERSION_NO)
@@ -39,57 +105,102 @@ class EXCAgent(Agent.Movies):
 #      title = title.replace('The ','',1)
 #      Log('Stripping "The" from the start of Title: ' + title)
 
-    query = String.URLEncode(String.StripDiacritics(title.replace('-','')))
-    searchUrl = EXC_SEARCH_MOVIES % query
-    Log('search url: ' + searchUrl)
-    searchResults = HTML.ElementFromURL(searchUrl)
-    searchTitle = searchResults.xpath('//title')[0].text_content()
-    count = 0
-    for movie in searchResults.xpath('//div[@class="gen"]//p[@class="gen12"]//a[contains(@href,"content")]'):
-      movieHREF = movie.get("href").strip()
-      Log('MovieHREF: ' + movieHREF)     
-      curName = movie.text_content().strip()
-      Log('newTitle: ' + curName)
-      curID = movie.get('href').split('/',4)[4]
-      Log('newID: ' + curID)
-      try:
-        movieResults = HTML.ElementFromURL(movieHREF)
-        curyear = movieResults.xpath('//p[contains(text(),"Date")]//a')[0].get('href')
-        curyear_group = re.search(r'(\d{8})',curyear)
-        if curyear_group is None:
-          Log('Date: No date found')
+    # We will branch out to the special search for N.A. websites if needed.
+    na_websites = {
+      "2 Chicks Same Time":     '518-2-chicks-same-time',
+      "American Daydreams":     '519-american-daydreams',
+      "Asian 1on1":             '520-asian-1on1',
+      "Ass Masterpiece":        '521-ass-masterpiece',
+      "Diary Of A Milf":        '522-diary-of-a-milf',
+      "Diary Of A Nanny":       '523-diary-of-a-nanny',
+      "Fast Times":             '524-fast-times-at-nau',
+      "Housewife 1 On 1":       '525-housewife-1-on-1',
+      "I Have a Wife":          '526-i-have-a-wife',
+      "Latin Adultery":         '528-latin-adultery',
+      "Lesbian Girl On Girl":   '2926-lesbian-girl-on-girl',
+      "My Dads Hot Girlfriend":'1366-my-dads-hot-girlfriend',
+      "My First Sex Teacher":   '529-my-first-sex-teacher',
+      "My Friends Hot Girl":   '2837-my-friends-hot-girl',
+      "My Friends Hot Mom":    '530-my-friends-hot-mom',
+      "My Girl Loves Anal":     '2954-my-girl-loves-anal',
+      "My Girlfriends Busty Friend":'2860-my-girlfriends-busty-friend',
+      "My Naughty Latin Maid":  '531-my-naughty-latin-maid',
+      "My Naughty Massage":     '2875-my-naughty-massage',
+      "My Sisters Hot Friend": '532-my-sisters-hot-friend',
+      "My Wifes Hot Friend":    '1245-my-wifes-hot-friend',
+      "Naughty America":        '533-naughty-america',
+      "Naughty Athletics":      '534-naughty-athletics',
+      "Naughty Bookworms":      '535-naughty-bookworms',
+      "Naughty Country Girls":   '1244-naughty-country-girls',
+      "Naughty Flipside":       '536-naughty-flipside',
+      "Naughty Office":         '537-naughty-office',
+      "Naughty Rich Sex":       '1376-naughty-rich-sex',
+      "Naughty Weddings":       '2978-naughty-weddings',
+      "Neighbor Affair":        '538-neighbor-affair',
+      "Seduced By A Cougar":    '539-seduced-by-a-cougar',
+      "Socal Coeds":            '540-socal-coeds'
+    }
+    for na_website_name, na_website_url_part in na_websites.iteritems():
+      if na_website_name.lower() in title.replace("'", '').lower():
+        search_na(results, title, year, lang, na_website_url_part)
+
+        
+    if len(results) == 0:
+      query = String.URLEncode(String.StripDiacritics(title.replace('-','')))
+      searchUrl = EXC_SEARCH_MOVIES % query
+      Log('search url: ' + searchUrl)
+      searchResults = HTML.ElementFromURL(searchUrl)
+      searchTitle = searchResults.xpath('//title')[0].text_content()
+      count = 0
+      for movie in searchResults.xpath('//div[@class="gen"]//p[@class="gen12"]//a[contains(@href,"content")]'):
+        movieHREF = movie.get("href").strip()
+        Log('MovieHREF: ' + movieHREF)     
+        curName = movie.text_content().strip()
+        Log('newTitle: ' + curName)
+        curID = movie.get('href').split('/',4)[4]
+        Log('newID: ' + curID)
+        try:
+          movieResults = HTML.ElementFromURL(movieHREF)
+          curyear = movieResults.xpath('//p[contains(text(),"Date")]//a')[0].get('href')
+          curyear_group = re.search(r'(\d{8})',curyear)
+          if curyear_group is None:
+            Log('Date: No date found')
+            score = 100 - Util.LevenshteinDistance(title.lower(), curName.lower())
+            curyear = ''
+            curdate = ''
+          else:
+            curdate = curyear_group.group(0)
+            curdate = Datetime.ParseDate(curdate).date()
+            curyear = str(curdate.year)
+            curmonth = str(curdate.month)
+            curday = str(curdate.day)
+            curdate = str(curdate)
+            Log('Found Date = ' + curdate)
+            score = 100 - Util.LevenshteinDistance(title.lower(), curName.lower()) - Util.LevenshteinDistance(year, curyear)
+            Log('It Worked ************************************************************')
+        except (IndexError):
           score = 100 - Util.LevenshteinDistance(title.lower(), curName.lower())
           curyear = ''
           curdate = ''
-        else:
-          curdate = curyear_group.group(0)
-          curdate = Datetime.ParseDate(curdate).date()
-          curyear = str(curdate.year)
-          curmonth = str(curdate.month)
-          curday = str(curdate.day)
-          curdate = str(curdate)
-          Log('Found Date = ' + curdate)
-          score = 100 - Util.LevenshteinDistance(title.lower(), curName.lower()) - Util.LevenshteinDistance(year, curyear)
-          Log('It Worked ************************************************************')
-      except (IndexError):
-        score = 100 - Util.LevenshteinDistance(title.lower(), curName.lower())
-        curyear = ''
-        curdate = ''
-        Log('Date: No date found (Exception)')
-      if score >= 45:
-        if curName.count(', The'):
-          curName = 'The ' + curName.replace(', The','',1)
-        if curdate:
-          curName = curName + ' [' + curdate + ']'
+          Log('Date: No date found (Exception)')
+        if score >= 45:
+          if curName.count(', The'):
+            curName = 'The ' + curName.replace(', The','',1)
+          if curdate:
+            curName = curName + ' [' + curdate + ']'
 
-        #Log('Found:')
-        #Log('    Date: ' + curdate)
-        #Log('    ID: ' + curID)
-        #Log('    Title: ' + curName)
-        #Log('    URL: ' + movieHREF)
-        results.Append(MetadataSearchResult(id = curID, name = curName, score = score, lang = lang))
-      count += 1
-    results.Sort('score', descending=True)
+          #Log('Found:')
+          #Log('    Date: ' + curdate)
+          #Log('    ID: ' + curID)
+          #Log('    Title: ' + curName)
+          #Log('    URL: ' + movieHREF)
+          results.Append(MetadataSearchResult(id = curID, name = curName, score = score, lang = lang))
+        count += 1
+      results.Sort('score', descending=True)
+
+    
+    
+    
 
   def update(self, metadata, media, lang):
     Log('Data18 Version : ' + VERSION_NO)
