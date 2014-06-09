@@ -367,7 +367,8 @@ class EXCAgent(Agent.Movies):
         for genreLink in genres:
           genreName = genreLink.text_content().strip('\n')
           if len(genreName) > 0 and re.match(r'View Complete List', genreName) is None:
-            metadata.genres.add(genreName)
+            if re.match(r'Filter content by multiple tags', genreName) is None:
+              metadata.genres.add(genreName)
       Log('Genre Sequence Updated')
     except: pass
 
