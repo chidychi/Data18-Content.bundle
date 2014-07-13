@@ -4,7 +4,7 @@ import random
 
 # this code was borrowed from the Excalibur Films Agent. April 9 2013
 # URLS
-VERSION_NO = '1.2014.06.08.1'
+VERSION_NO = '1.2014.07.13.1'
 EXC_BASEURL = 'http://www.data18.com/'
 EXC_SEARCH_MOVIES = EXC_BASEURL + 'search/?k=%s&t=0'
 EXC_MOVIE_INFO = EXC_BASEURL + 'content/%s'
@@ -16,21 +16,49 @@ def Start():
   HTTP.SetHeader('User-agent', 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.2; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0)')
 
 
-def search_na(results, media_title, year, lang, na_url_part):
+def search_na(results, media_title, year, lang):
   """
   Since N.A. scenes are not appearing in the search we need to do a bit of trickery to get them.
   """
   Log('Alternative search for N.A. websites')
   actors = media_title.split(' in ')[0].split(',')
   actors_url_parts = media_title.split(' in ')[0].lower().replace(' ', '_').split(',')
+  na_url_site = media_title.split(' in ',1)[1]
+  Log('Search URL: ' + na_url_site)
 
   # Take the first actor and the website name to search
   query_actor = String.URLEncode(String.StripDiacritics(actors_url_parts[0].replace('-','')))
-  searchURL = EXC_BASEURL + query_actor + '/sites/' + na_url_part + '.html'
+  searchURL = EXC_BASEURL + query_actor
   Log('Search URL: ' + searchURL)
 
-  search_results = HTML.ElementFromURL(searchURL)
+  try:
+    search_results = HTML.ElementFromURL(searchURL)
+  except:
+    searchURL = EXC_BASEURL + 'dev/' + query_actor
+    Log('Search URL: ' + searchURL)
+    search_results = HTML.ElementFromURL(searchURL)
+  
+  xp = "//select//Option[text()[contains(translate(., '%s', '%s'), '%s')]]//@value" % (na_url_site.upper(), na_url_site.lower(), na_url_site.lower())
+  Log('xPath: ' + xp)
+  try:
+    searchURL = search_results.xpath(xp)[0]
+  except:
+    search_results = HTML.ElementFromURL(searchURL + '/sites/')
+    xp = "//a[text()[contains(translate(., '%s', '%s'), '%s')]]//@href" % (na_url_site.upper(), na_url_site.lower(), na_url_site.lower())
+    Log('xPath: ' + xp)
+    searchURL = search_results.xpath(xp)[0]
+    
+  #Log('Search URL: ' + searchURL)
+  search_results = HTML.ElementFromURL(searchURL)    	
 
+
+  #searchURL = EXC_BASEURL + query_actor + '/sites/' + na_url_part + '.html'
+  Log('Search URL: ' + searchURL)
+  #try:
+    #search_results = HTML.ElementFromURL(searchURL)
+  #except:
+    #searchURL = EXC_BASEURL +'dev/' + query_actor + '/sites/' + na_url_part + '.html'
+    #search_results = HTML.ElementFromURL(searchURL)    	
   count = 0
   for movie in search_results.xpath('//div[@class="bscene2 genmed"]//p[@class="line1"]//a[@class="gen11 bold"]'):
     movie_HREF = movie.get("href").strip()
@@ -46,7 +74,7 @@ def search_na(results, media_title, year, lang, na_url_part):
       curyear_group = re.search(r'(\d{8})',curyear)
       if curyear_group is None:
         Log('Date: No date found')
-        score = 100 - Util.LevenshteinDistance(title.lower(), curName.lower())
+        score = 100 - Util.LevenshteinDistance(media_title.lower(), current_name.lower())
         curyear = ''
         curdate = ''
       else:
@@ -100,53 +128,15 @@ class EXCAgent(Agent.Movies):
       Log('Searching for Year: ' + year)
 
     Log('Searching for Title: ' + title)
-#Strip "The" from title
-#    if title.startswith('The '):
-#      title = title.replace('The ','',1)
-#      Log('Stripping "The" from the start of Title: ' + title)
 
-    # We will branch out to the special search for N.A. websites if needed.
-    na_websites = {
-      "2 Chicks Same Time":     '518-2-chicks-same-time',
-      "American Daydreams":     '519-american-daydreams',
-      "Asian 1on1":             '520-asian-1on1',
-      "Ass Masterpiece":        '521-ass-masterpiece',
-      "Diary Of A Milf":        '522-diary-of-a-milf',
-      "Diary Of A Nanny":       '523-diary-of-a-nanny',
-      "Fast Times":             '524-fast-times-at-nau',
-      "Housewife 1 On 1":       '525-housewife-1-on-1',
-      "I Have a Wife":          '526-i-have-a-wife',
-      "Latin Adultery":         '528-latin-adultery',
-      "Lesbian Girl On Girl":   '2926-lesbian-girl-on-girl',
-      "My Dads Hot Girlfriend":'1366-my-dads-hot-girlfriend',
-      "My First Sex Teacher":   '529-my-first-sex-teacher',
-      "My Friends Hot Girl":   '2837-my-friends-hot-girl',
-      "My Friends Hot Mom":    '530-my-friends-hot-mom',
-      "My Girl Loves Anal":     '2954-my-girl-loves-anal',
-      "My Girlfriends Busty Friend":'2860-my-girlfriends-busty-friend',
-      "My Naughty Latin Maid":  '531-my-naughty-latin-maid',
-      "My Naughty Massage":     '2875-my-naughty-massage',
-      "My Sisters Hot Friend": '532-my-sisters-hot-friend',
-      "My Wifes Hot Friend":    '1245-my-wifes-hot-friend',
-      "Naughty America":        '533-naughty-america',
-      "Naughty Athletics":      '534-naughty-athletics',
-      "Naughty Bookworms":      '535-naughty-bookworms',
-      "Naughty Country Girls":   '1244-naughty-country-girls',
-      "Naughty Flipside":       '536-naughty-flipside',
-      "Naughty Office":         '537-naughty-office',
-      "Naughty Rich Sex":       '1376-naughty-rich-sex',
-      "Naughty Weddings":       '2978-naughty-weddings',
-      "Neighbor Affair":        '538-neighbor-affair',
-      "Seduced By A Cougar":    '539-seduced-by-a-cougar',
-      "Socal Coeds":            '540-socal-coeds'
-    }
-    for na_website_name, na_website_url_part in na_websites.iteritems():
-      if na_website_name.lower() in title.replace("'", '').lower():
-        search_na(results, title, year, lang, na_website_url_part)
-
+    if " in " in title.lower():
+      search_na(results, title, year, lang)
+      
         
     if len(results) == 0:
-      query = String.URLEncode(String.StripDiacritics(title.replace('-','')))
+      #query = String.URLEncode(String.StripDiacritics(title.replace('-','')))
+      query = String.URLEncode(String.StripDiacritics(title))
+      
       searchUrl = EXC_SEARCH_MOVIES % query
       Log('search url: ' + searchUrl)
       searchResults = HTML.ElementFromURL(searchUrl)
@@ -289,7 +279,7 @@ class EXCAgent(Agent.Movies):
 
     # Get alternate Poster - Video
     try:
-      posterimg = html.xpath('//div//a//img[@alt="Play this Video"]')[0]
+      posterimg = html.xpath('//img[@alt="Play this Video"]')[0]
       posterUrl = posterimg.get('src').strip()
       Log('Video Postetr Url: ' + posterUrl)
       metadata.posters[posterUrl] = Proxy.Media(HTTP.Request(posterUrl, headers={'Referer': contentURL}).content, sort_order = i)
@@ -300,7 +290,7 @@ class EXCAgent(Agent.Movies):
     # Get Art from "Play this Video"
     try:
       i = 1
-      posterimg = html.xpath('//div//a//img[@alt="Play this Video"]')[0]
+      posterimg = html.xpath('//img[@alt="Play this Video"]')[0]
       posterUrl = posterimg.get('src').strip()
       Log('ArtUrl: ' + posterUrl)
       metadata.art[posterUrl] = Proxy.Media(HTTP.Request(posterUrl, headers={'Referer': contentURL}).content,  sort_order = i)
@@ -398,13 +388,13 @@ class EXCAgent(Agent.Movies):
 
     # Studio
     try:
-      metadata.studio = html.xpath('//a[@href="http://www.data18.com/sites/"]/following-sibling::a[last()-1]')[0].text_content().strip()
+      metadata.studio = html.xpath('//a[@href="http://www.data18.com/sites/"]/following-sibling::a')[0].text_content().strip()
       Log('Studio Sequence Updated')
     except: pass
 
     # Collection
     try:
-      collection = html.xpath('//a[@href="http://www.data18.com/sites/"]/following-sibling::a[last()-2]')[0].text_content().strip()
+      collection = html.xpath('//a[@href="http://www.data18.com/sites/"]/following-sibling::a')[1].text_content().strip()
       metadata.collections.clear ()
       metadata.collections.add (collection)
       Log('Collection Sequence Updated')
@@ -412,7 +402,7 @@ class EXCAgent(Agent.Movies):
 
    # Tagline
     try:
-      metadata.tagline = html.xpath('//a[@href="http://www.data18.com/sites/"]/following-sibling::a[last()]')[0].get('href')
+      metadata.tagline = contentURL #html.xpath('//a[@href="http://www.data18.com/sites/"]/following-sibling::a[last()]')[0].get('href')
       Log('Tagline Sequence Updated')
     except: pass
 
@@ -446,4 +436,3 @@ class EXCAgent(Agent.Movies):
       for x in range (len(metadata.genres)):
         Log('    Genres:..............' + metadata.genres[x])
     except: pass
-
