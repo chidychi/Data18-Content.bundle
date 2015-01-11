@@ -4,7 +4,7 @@ import random
 
 # this code was borrowed from the Excalibur Films Agent. April 9 2013
 # URLS
-VERSION_NO = '1.2015.01.11.1'
+VERSION_NO = '1.2015.01.11.4'
 EXC_BASEURL = 'http://www.data18.com/'
 EXC_SEARCH_MOVIES = EXC_BASEURL + 'search/?k=%s&t=0'
 EXC_MOVIE_INFO = EXC_BASEURL + 'content/%s'
@@ -44,7 +44,7 @@ def search_na(results, media_title, year, lang):
     try:
       searchURL = search_results.xpath(xp)[0]
     except:
-      xp = "//select//Option[text()[contains(translate(., '%s', '%s'), '%s')]]//@value" % (na_url_site.upper(), na_url_site.lower(), na_url_site.lower())
+      xp = "//select//option[text()[contains(translate(., '%s', '%s'), '%s')]]//@value" % (na_url_site.upper(), na_url_site.lower(), na_url_site.lower())
       Log('xPath: ' + xp)
       searchURL = search_results.xpath(xp)[0]
   except:
