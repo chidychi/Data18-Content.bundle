@@ -42,11 +42,11 @@ def search_na(results, media_title, year, lang):
   Log('xPath: ' + xp)
   try:
       try:
-      searchURL = search_results.xpath(xp)[0]
+        searchURL = search_results.xpath(xp)[0]
       except:
-      xp = "//select//Option[text()[contains(translate(., '%s', '%s'), '%s')]]//@value" % (na_url_site.upper(), na_url_site.lower(), na_url_site.lower())
-      Log('xPath: ' + xp)
-      searchURL = search_results.xpath(xp)[0]
+        xp = "//select//Option[text()[contains(translate(., '%s', '%s'), '%s')]]//@value" % (na_url_site.upper(), na_url_site.lower(), na_url_site.lower())
+        Log('xPath: ' + xp)
+        searchURL = search_results.xpath(xp)[0]
   except:
     search_results = HTML.ElementFromURL(searchURL + '/sites/')
     xp = "//a[text()[contains(translate(., '%s', '%s'), '%s')]]//@href" % (na_url_site.upper(), na_url_site.lower(), na_url_site.lower())
