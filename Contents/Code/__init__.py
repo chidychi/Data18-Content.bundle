@@ -4,7 +4,7 @@ import random
 
 # this code was borrowed from the Excalibur Films Agent. April 9 2013
 # URLS
-VERSION_NO = '1.2015.01.11.4'
+VERSION_NO = '1.2015.03.28.1'
 EXC_BASEURL = 'http://www.data18.com/'
 EXC_SEARCH_MOVIES = EXC_BASEURL + 'search/?k=%s&t=0'
 EXC_MOVIE_INFO = EXC_BASEURL + 'content/%s'
@@ -124,6 +124,14 @@ class EXCAgent(Agent.Movies):
     Log('Data18 Version : ' + VERSION_NO)
     Log('**************SEARCH****************')
     title = media.name
+    try:
+        if media.name.isdigit():
+            Log('Media.name is numeric')
+            contentURL = EXC_MOVIE_INFO % media.name
+            html = HTML.ElementFromURL(contentURL)
+            title = html.xpath('//div/h1/text()')[0]
+            results.Append(MetadataSearchResult(id = media.name, name  = title, score = '100', lang = lang))
+
     if media.primary_metadata is not None:
       title = media.primary_metadata.title
 
