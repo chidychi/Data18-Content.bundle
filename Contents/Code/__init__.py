@@ -75,7 +75,7 @@ def search_na(results, media_title, year, lang):
 
     try:
       movieResults = HTML.ElementFromURL(movie_HREF)
-      curyear = movieResults.xpath('//p[text()[contains(translate(.,"relasdt","RELASDT"),"RELEASE DATE")]//a')[0].get('href')
+      curyear = movieResults.xpath('//p[text()[contains(translate(.,"relasdt","RELASDT"),"RELEASE DATE")]]//a')[0].get('href')
       curyear_group = re.search(r'(\d{8})',curyear)
       if curyear_group is None:
         Log('Date: No date found')
@@ -163,7 +163,7 @@ class EXCAgent(Agent.Movies):
         Log('newID: ' + curID)
         try:
           movieResults = HTML.ElementFromURL(movieHREF)
-          curyear = movieResults.xpath('//p[text()[contains(translate(.,"relasdt","RELASDT"),"RELEASE DATE")]//a')[0].get('href')
+          curyear = movieResults.xpath('//p[text()[contains(translate(.,"relasdt","RELASDT"),"RELEASE DATE")]]//a')[0].get('href')
           curyear_group = re.search(r'(\d{8})',curyear)
           if curyear_group is None:
             Log('Date: No date found')
@@ -222,7 +222,7 @@ class EXCAgent(Agent.Movies):
 
     # Release Date
     try:
-      curyear = html.xpath('//p[text()[contains(translate(.,"relasdt","RELASDT"),"RELEASE DATE")]//a')[0].get('href')
+      curyear = html.xpath('//p[text()[contains(translate(.,"relasdt","RELASDT"),"RELEASE DATE")]]//a')[0].get('href')
       curyear_group = re.search(r'(\d{8})',curyear)
       curdate = curyear_group.group(0)
       curdate = Datetime.ParseDate(curdate).date()
