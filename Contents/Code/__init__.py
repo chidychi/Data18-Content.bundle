@@ -400,13 +400,13 @@ class EXCAgent(Agent.Movies):
 
     # Studio
     try:
-      metadata.studio = html.xpath('//a[@href="http://www.data18.com/sites/"]/following-sibling::a')[0].text_content().strip()
+      metadata.studio = html.xpath('//a[contains(@href,"http://www.data18.com/sites/") and following-sibling::i[position()=1][text()="Network"]]')[0].text_content().strip()
       Log('Studio Sequence Updated')
     except: pass
 
     # Collection
     try:
-      collection = html.xpath('//a[@href="http://www.data18.com/sites/"]/following-sibling::a')[1].text_content().strip()
+      collection = html.xpath('//a[contains(@href,"http://www.data18.com/sites/") and following-sibling::i[position()=1][text()="Site"]]')[0].text_content().strip()
       metadata.collections.clear ()
       metadata.collections.add (collection)
       Log('Collection Sequence Updated')
@@ -441,7 +441,7 @@ class EXCAgent(Agent.Movies):
     except: pass
     try:
       for x in range (len(metadata.roles)):
-        Log('    Starring:............' + metadata.roles[x])
+        Log('    Starring:............' + metadata.roles[x].actor)
     except: pass
 
     try:
