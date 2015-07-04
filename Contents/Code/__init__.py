@@ -17,6 +17,22 @@ def Start():
   HTTP.SetHeader('User-agent', 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.2; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0)')
 
 
+def xpath_prepare(xpath, search):
+  return xpath.replace("$u", search.upper()).replace("$l", search.lower()).replace("$s", search.lower())
+
+
+def find_option_value(searchURL, search_results, search):
+  xp = xpath_prepare('//select//Option[text()[contains(translate(., "$u", "$l"), "$s")]]//@value', search)
+  Log('xPath: ' + xp)
+  try:
+    searchURL = search_results.xpath(xp)[0]
+  except:
+    xp = xpath_prepare('//select//option[text()[contains(translate(., "$u", "$l"), "$s")]]//@value', search)
+    Log('xPath: ' + xp)
+    searchURL = search_results.xpath(xp)[0]
+  return searchURL
+
+
 def search_na(results, media_title, year, lang):
   """
   Since N.A. scenes are not appearing in the search we need to do a bit of trickery to get them.
@@ -39,22 +55,17 @@ def search_na(results, media_title, year, lang):
     Log('Search URL: ' + searchURL)
     search_results = HTML.ElementFromURL(searchURL)
 
-  xp = '''//select//Option[text()[contains(translate(., "%s", "%s"), "%s")]]//@value''' % (na_url_site.upper(), na_url_site.lower(), na_url_site.lower())
-  Log('xPath: ' + xp)
   try:
+    searchURL = find_option_value(searchURL, search_results, search)
+  except:
     try:
-      searchURL = search_results.xpath(xp)[0]
+      searchURL = find_option_value(searchURL, search_results, re.sub(r'[\'\"]', '', search))
     except:
-      xp = '''//select//option[text()[contains(translate(., "%s", "%s"), "%s")]]//@value''' % (na_url_site.upper(), na_url_site.lower(), na_url_site.lower())
+      search_results = HTML.ElementFromURL(searchURL + '/sites/')
+      xp = xpath_prepare('//a[text()[contains(translate(., "$u", "$l"), "$s")]]//@href', search)
       Log('xPath: ' + xp)
       searchURL = search_results.xpath(xp)[0]
-  except:
-    search_results = HTML.ElementFromURL(searchURL + '/sites/')
-    xp = '''//a[text()[contains(translate(., "%s", "%s"), "%s")]]//@href''' % (na_url_site.upper(), na_url_site.lower(), na_url_site.lower())
-    Log('xPath: ' + xp)
-    searchURL = search_results.xpath(xp)[0]
 
-  #Log('Search URL: ' + searchURL)
   search_results = HTML.ElementFromURL(searchURL)
 
 
@@ -125,8 +136,11 @@ class EXCAgent(Agent.Movies):
     Log('Data18 Version : ' + VERSION_NO)
     Log('**************SEARCH****************')
     title = media.name
+    content_id = False
+
     if media.name.isdigit():
         Log('Media.name is numeric')
+        content_id = True
         contentURL = EXC_MOVIE_INFO % media.name
         html = HTML.ElementFromURL(contentURL)
         title = html.xpath('//div/h1/text()')[0]
@@ -141,8 +155,7 @@ class EXCAgent(Agent.Movies):
       Log('Searching for Year: ' + year)
 
     Log('Searching for Title: ' + title)
-
-    if " in " in title.lower():
+    if " in " in title.lower() and not content_id:
       search_na(results, title, year, lang)
 
 
