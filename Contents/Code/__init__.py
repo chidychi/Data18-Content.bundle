@@ -8,6 +8,7 @@ VERSION_NO = '1.2015.03.28.2'
 EXC_BASEURL = 'http://www.data18.com/'
 EXC_SEARCH_MOVIES = EXC_BASEURL + 'search/?k=%s&t=0'
 EXC_MOVIE_INFO = EXC_BASEURL + 'content/%s'
+XP_SCENE_LINK = '//div[contains(@class,"bscene")]//span//a[contains(@href,"content")]'
 
 titleFormats = r'DVD|Blu-Ray|BR|Combo|Pack'
 
@@ -65,7 +66,7 @@ def search_na(results, media_title, year, lang):
     #searchURL = EXC_BASEURL +'dev/' + query_actor + '/sites/' + na_url_part + '.html'
     #search_results = HTML.ElementFromURL(searchURL)    	
   count = 0
-  for movie in search_results.xpath('//div[@class="bscene2 genmed"]//p[@class="line1"]//a[@class="gen11 bold"]'):
+  for movie in search_results.xpath(XP_SCENE_LINK):
     movie_HREF = movie.get("href").strip()
     Log('Movie HREF: ' + movie_HREF)
     current_name = movie.text_content().strip()
@@ -154,7 +155,7 @@ class EXCAgent(Agent.Movies):
       searchResults = HTML.ElementFromURL(searchUrl)
       searchTitle = searchResults.xpath('//title')[0].text_content()
       count = 0
-      for movie in searchResults.xpath('//div[@class="gen"]//p[@class="gen12"]//a[contains(@href,"content")]'):
+      for movie in searchResults.xpath(XP_SCENE_LINK):
         movieHREF = movie.get("href").strip()
         Log('MovieHREF: ' + movieHREF)     
         curName = movie.text_content().strip()
