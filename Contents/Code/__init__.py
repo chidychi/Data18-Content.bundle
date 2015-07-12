@@ -56,13 +56,13 @@ def search_na(results, media_title, year, lang):
     search_results = HTML.ElementFromURL(searchURL)
 
   try:
-    searchURL = find_option_value(searchURL, search_results, search)
+    searchURL = find_option_value(searchURL, search_results, na_url_site)
   except:
     try:
-      searchURL = find_option_value(searchURL, search_results, re.sub(r'[\'\"]', '', search))
+      searchURL = find_option_value(searchURL, search_results, re.sub(r'[\'\"]', '', na_url_site))
     except:
       search_results = HTML.ElementFromURL(searchURL + '/sites/')
-      xp = xpath_prepare('//a[text()[contains(translate(., "$u", "$l"), "$s")]]//@href', search)
+      xp = xpath_prepare('//a[text()[contains(translate(., "$u", "$l"), "$s")]]//@href', na_url_site)
       Log('xPath: ' + xp)
       searchURL = search_results.xpath(xp)[0]
 
