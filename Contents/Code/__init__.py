@@ -155,9 +155,6 @@ class EXCAgent(Agent.Movies):
       Log('Searching for Year: ' + year)
 
     Log('Searching for Title: ' + title)
-    if " in " in title.lower() and not content_id:
-      search_na(results, title, year, lang)
-
 
     if len(results) == 0:
       #query = String.URLEncode(String.StripDiacritics(title.replace('-','')))
@@ -212,6 +209,13 @@ class EXCAgent(Agent.Movies):
           #Log('    URL: ' + movieHREF)
           results.Append(MetadataSearchResult(id = curID, name = curName, score = score, lang = lang))
         count += 1
+
+      if " in " in title.lower() and not content_id:
+        try:
+          search_na(results, title, year, lang)
+        except (IndexError):
+          pass
+
       results.Sort('score', descending=True)
 
 
