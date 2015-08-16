@@ -1,6 +1,7 @@
 # Data18-Content
 import re
 import random
+from datetime import datetime
 
 # this code was borrowed from the Excalibur Films Agent. April 9 2013
 # URLS
@@ -15,6 +16,20 @@ titleFormats = r'DVD|Blu-Ray|BR|Combo|Pack'
 def Start():
   HTTP.CacheTime = CACHE_1DAY
   HTTP.SetHeader('User-agent', 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.2; Trident/4.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0)')
+
+def parse_document_date(html):
+  try:
+    try:
+      curyear = html.xpath('//p[text()[contains(translate(.,"relasdt","RELASDT"),"RELEASE DATE")]]//a')[0].get('href')
+      curyear_group = re.search(r'(\d{8})',curyear)
+      curdate = curyear_group.group(0)
+      curdate = Datetime.ParseDate(curdate).date()
+    except:
+      date = html.xpath('//*[b[contains(text(),"Scene Information")]]//a[@title="Show me all updates from this date"]')[0].text_content()
+      curdate = datetime.strptime(date, '%B %d, %Y').date()
+  except:
+    curdate = None
+  return curdate
 
 
 def xpath_prepare(xpath, search):
@@ -87,16 +102,13 @@ def search_na(results, media_title, year, lang):
 
     try:
       movieResults = HTML.ElementFromURL(movie_HREF)
-      curyear = movieResults.xpath('//p[text()[contains(translate(.,"relasdt","RELASDT"),"RELEASE DATE")]]//a')[0].get('href')
-      curyear_group = re.search(r'(\d{8})',curyear)
-      if curyear_group is None:
+      curdate = parse_document_date(movieResults)
+      if curdate is None:
         Log('Date: No date found')
         score = 100 - Util.LevenshteinDistance(media_title.lower(), current_name.lower())
         curyear = ''
         curdate = ''
       else:
-        curdate = curyear_group.group(0)
-        curdate = Datetime.ParseDate(curdate).date()
         curyear = str(curdate.year)
         curmonth = str(curdate.month)
         curday = str(curdate.day)
@@ -174,16 +186,13 @@ class EXCAgent(Agent.Movies):
         Log('newID: ' + curID)
         try:
           movieResults = HTML.ElementFromURL(movieHREF)
-          curyear = movieResults.xpath('//p[text()[contains(translate(.,"relasdt","RELASDT"),"RELEASE DATE")]]//a')[0].get('href')
-          curyear_group = re.search(r'(\d{8})',curyear)
-          if curyear_group is None:
+          curdate = parse_document_date(movieResults)
+          if curdate is None:
             Log('Date: No date found')
             score = 100 - Util.LevenshteinDistance(title.lower(), curName.lower())
             curyear = ''
             curdate = ''
           else:
-            curdate = curyear_group.group(0)
-            curdate = Datetime.ParseDate(curdate).date()
             curyear = str(curdate.year)
             curmonth = str(curdate.month)
             curday = str(curdate.day)
@@ -240,20 +249,21 @@ class EXCAgent(Agent.Movies):
 
     # Release Date
     try:
-      curyear = html.xpath('//p[text()[contains(translate(.,"relasdt","RELASDT"),"RELEASE DATE")]]//a')[0].get('href')
-      curyear_group = re.search(r'(\d{8})',curyear)
-      curdate = curyear_group.group(0)
-      curdate = Datetime.ParseDate(curdate).date()
+      curdate = parse_document_date(html)
       metadata.originally_available_at = curdate
       curyear = str(curdate.year)
       curmonth = str(curdate.month)
       curday = str(curdate.day)
       curdate = str(curdate)
       metadata.year = metadata.originally_available_at.year
-      metadata.title = re.sub(r'\[\d+-\d+-\d+\]','',metadata.title).strip(' ')
+
+      # Commenting for now as this replaces the search title with no date, which is helpful
+      #metadata.title = re.sub(r'\[\d+-\d+-\d+\]','',metadata.title).strip(' ')
+
       Log('Title Updated')
       Log('Release Date Sequence Updated')
     except: pass
+
     # Get Poster
     # Get Official Poster if available
     i = 1
