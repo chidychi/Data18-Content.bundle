@@ -31,6 +31,33 @@ def parse_document_date(html):
     curdate = None
   return curdate
 
+def parse_document_network(html):
+    # Network
+    try:
+      return html.xpath('//a[contains(@href,"http://www.data18.com/sites/") and following-sibling::i[position()=1][text()="Network"]]')[0].text_content().strip()
+    except:
+      return None
+
+def parse_document_site(html):
+    # Site
+    try:
+      return html.xpath('//a[contains(@href,"http://www.data18.com/sites/") and following-sibling::i[position()=1][text()="Site"]]')[0].text_content().strip()
+    except:
+      return None
+
+def parse_document_title(html):
+    # Title
+    return html.xpath('//div/h1/text()')[0].strip()
+
+def format_search_title(title, curdate, network, site):
+  if title.count(', The'):
+    title = 'The ' + title.replace(', The','',1)
+  extra = '/'.join([e for e in [network, site] if e])
+  extra = ' '.join([e for e in [str(curdate), extra] if e]).strip()
+
+  if len(extra) > 0:
+    title = title + ' (' + extra + ')'
+  return title.strip()
 
 def xpath_prepare(xpath, search):
   return xpath.replace("$u", search.upper()).replace("$l", search.lower()).replace("$s", search.lower())
@@ -122,10 +149,9 @@ def search_na(results, media_title, year, lang):
       curdate = ''
       Log('Date: No date found (Exception)')
     if score >= 45:
-      if current_name.count(', The'):
-        current_name = 'The ' + current_name.replace(', The','',1)
-      if curdate:
-        current_name = current_name + ' [' + curdate + ']'
+      network = parse_document_network(movieResults)
+      site = parse_document_site(movieResults)
+      current_name = format_search_title(current_name, curdate, network, site)
 
       Log('Found:')
       Log('    Date: ' + curdate)
@@ -155,8 +181,14 @@ class EXCAgent(Agent.Movies):
         content_id = True
         contentURL = EXC_MOVIE_INFO % media.name
         html = HTML.ElementFromURL(contentURL)
-        title = html.xpath('//div/h1/text()')[0]
-        results.Append(MetadataSearchResult(id = media.name, name  = title, score = '100', lang = lang))
+        curdate = parse_document_date(html)
+
+        network = parse_document_network(html)
+        site = parse_document_site(html)
+        title = parse_document_title(html)
+
+        title = format_search_title(title, curdate, network, site)
+        results.Append(MetadataSearchResult(id = media.name, name = title, score = '100', lang = lang))
 
     if media.primary_metadata is not None:
       title = media.primary_metadata.title
@@ -206,10 +238,10 @@ class EXCAgent(Agent.Movies):
           curdate = ''
           Log('Date: No date found (Exception)')
         if score >= 45:
-          if curName.count(', The'):
-            curName = 'The ' + curName.replace(', The','',1)
-          if curdate:
-            curName = curName + ' [' + curdate + ']'
+          network = parse_document_network(movieResults)
+          site = parse_document_site(movieResults)
+
+          curName = format_search_title(curName, curdate, network, site)
 
           #Log('Found:')
           #Log('    Date: ' + curdate)
@@ -236,7 +268,7 @@ class EXCAgent(Agent.Movies):
     Log('**************UPDATE****************')
     contentURL = EXC_MOVIE_INFO % metadata.id
     html = HTML.ElementFromURL(contentURL)
-    metadata.title = re.sub(titleFormats,'',media.title).strip(' .-+')
+    metadata.title = parse_document_title(html)
 
     Log('Current:')
     Log('    Title: ' + metadata.title)
@@ -428,16 +460,19 @@ class EXCAgent(Agent.Movies):
 
     # Studio
     try:
-      metadata.studio = html.xpath('//a[contains(@href,"http://www.data18.com/sites/") and following-sibling::i[position()=1][text()="Network"]]')[0].text_content().strip()
-      Log('Studio Sequence Updated')
+      network = parse_document_network(html)
+      if network:
+        metadata.studio = network
+        Log('Studio Sequence Updated')
     except: pass
 
     # Collection
     try:
-      collection = html.xpath('//a[contains(@href,"http://www.data18.com/sites/") and following-sibling::i[position()=1][text()="Site"]]')[0].text_content().strip()
-      metadata.collections.clear ()
-      metadata.collections.add (collection)
-      Log('Collection Sequence Updated')
+      collection = parse_document_site(html)
+      if collection:
+        metadata.collections.clear ()
+        metadata.collections.add (collection)
+        Log('Collection Sequence Updated')
     except: pass
 
    # Tagline
