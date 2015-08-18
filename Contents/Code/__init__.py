@@ -396,9 +396,9 @@ class EXCAgent(Agent.Movies):
     try:
       metadata.summary = ""
       paragraph = html.xpath('//*[b[contains(text(),"Story:")]]')[0]
-      metadata.summary = paragraph.text_content().replace('&13;', '').strip(' \t\n\r"') + "\n\n"
+      metadata.summary = paragraph.text_content().replace('&13;', '').strip(' \t\n\r"') + "\n"
       metadata.summary.strip('\n')
-      metadata.summary = re.sub(r'Story:','',metadata.summary)
+      metadata.summary = re.sub(r'Story: \n','',metadata.summary)
       Log('Summary Sequence Updated')
     except: pass
 
