@@ -436,6 +436,8 @@ class EXCAgent(Agent.Movies):
       Log('Tagline Sequence Updated')
     except: pass
 
+    # Content Rating
+    metadata.content_rating = 'NC-17'
 
     Log('Updated:')
     Log('    Title:...............' + metadata.title)
