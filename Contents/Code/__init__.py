@@ -205,10 +205,11 @@ def search_na(results, media_title, year, lang):
                 # curday = str(curdate.day)
                 curdate = str(curdate)
                 Log('Found Date = ' + curdate)
-                score = 100 - Util.LevenshteinDistance(
-                    media_title.lower(), current_name.lower())
-                score = score - Util.LevenshteinDistance(year, curyear)
-                Log('It Worked ********')
+                score = 100 - \
+                    Util.LevenshteinDistance(
+                        media_title.lower(), current_name.lower()) - \
+                    Util.LevenshteinDistance(year, curyear)
+                Log('It Worked ******** Score: {}'.format(score))
         except (IndexError):
             score = 100 - \
                 Util.LevenshteinDistance(
@@ -312,16 +313,16 @@ class EXCAgent(Agent.Movies):
                         Log('Found Date = ' + curdate)
                         score = 100 - \
                             Util.LevenshteinDistance(
-                                title.lower(), curName.lower())
-                        score = Util.LevenshteinDistance(year, curyear)
-                        Log('It Worked ********')
+                                title.lower(), curName.lower()) - \
+                            Util.LevenshteinDistance(year, curyear)
+                        Log('It Worked ******** Score: {}'.format(score))
                 except (IndexError):
                     score = 100 - \
                         Util.LevenshteinDistance(
                             title.lower(), curName.lower())
                     curyear = ''
                     curdate = ''
-                    Log('Date: No date found (Exception)')
+                    Log('Date: No date found (Exception).  Score: {}'.format(score))
                 if score >= 45:
                     network = parse_document_network(movieResults)
                     site = parse_document_site(movieResults)
