@@ -24,6 +24,8 @@ XPATHS = {
                 and following-sibling::i[position()=1][text()="Network"]]',
     'site': '//a[contains(@href,"http://www.data18.com/sites/") \
                 and following-sibling::i[position()=1][text()="Site"]]',
+    'studio': '//a[contains(@href,"http://www.data18.com/studios/") \
+                and following-sibling::i[position()=1][text()="Studio"]]',
     # Search Result Xpaths
     'scene-container': '//div[contains(@class,"bscene")]',
     'scene-link': '//span//a[contains(@href,"content")]',
@@ -44,6 +46,8 @@ XPATHS = {
                         "RELEASE DATE")]]//a',
     'release-date2': '//*[b[contains(text(),"Scene Information")]]\
                         //a[@title="Show me all updates from this date"]',
+    'release-date3': '//*[b[contains(text(),"Scene Information")]]\
+                        /span[@class="gen11"]/b',
     # Images
     'poster-image': '//img[@alt="poster"]',
     'single-image-url': '//img[contains(@alt,"image")]/..',
@@ -70,8 +74,14 @@ def parse_document_date(html):
             curdate = curyear_group.group(0)
             curdate = Datetime.ParseDate(curdate).date()
         except:
-            date = html.xpath(XPATHS['release-date2'])[0].text_content()
-            curdate = datetime.strptime(date, '%B %d, %Y').date()
+            try:
+                date = html.xpath(XPATHS['release-date2'])[0].text_content()
+                curdate = datetime.strptime(date, '%B %d, %Y').date()
+            except:
+                date = html.xpath(XPATHS['release-date3'])[0].text_content()
+                curdate = Datetime.ParseDate(date).date()
+                curdate = curdate.replace(day=1)
+                #Log('curdate : '+date)
     except:
         curdate = None
     return curdate
@@ -81,6 +91,13 @@ def parse_document_network(html):
     # Network
     try:
         return html.xpath(XPATHS['network'])[0].text_content().strip()
+    except:
+        return None
+
+def parse_document_studio(html):
+    # Network
+    try:
+        return html.xpath(XPATHS['studio'])[0].text_content().strip()
     except:
         return None
 
@@ -614,9 +631,14 @@ class EXCAgent(Agent.Movies):
 
         # Studio
         try:
-            network = parse_document_network(html)
-            if network:
-                metadata.studio = network
+            studio = parse_document_studio(html)
+            if not studio:
+                studio = parse_document_network(html)
+                if not studio:
+                    studio = parse_document_site(html)
+
+            if studio:
+                metadata.studio = studio
                 Log('Studio Sequence Updated')
         except:
             pass
