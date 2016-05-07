@@ -44,10 +44,10 @@ XPATHS = {
     'release-date': '//p[text()[contains(\
                         translate(.,"relasdt","RELASDT"),\
                         "RELEASE DATE")]]//a',
-    'release-date2': '//*[b[contains(text(),"Scene Information")]]\
-                        //a[@title="Show me all updates from this date"]',
-    'release-date3': '//*[b[contains(text(),"Scene Information")]]\
-                        /span[@class="gen11"]/b',
+    'release-date2': '//*[span[contains(text(),"Release date")]]\
+                    //a[@title="Show me all updates from this date"]',
+    'release-date3': '//*[span[contains(text(),"Release date")]]\
+                    /span[@class="gen11"]/b',
     # Images
     'poster-image': '//img[@alt="poster"]',
     'single-image-url': '//img[contains(@alt,"image")]/..',
