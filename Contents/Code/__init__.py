@@ -5,7 +5,7 @@ from datetime import datetime
 
 # this code was borrowed from the Excalibur Films Agent. April 9 2013
 # URLS
-VERSION_NO = '1.2016.06.30.1'
+VERSION_NO = '1.2016.06.30.2'
 EXC_BASEURL = 'http://www.data18.com/'
 EXC_SEARCH_MOVIES = EXC_BASEURL + 'search/?k=%s&t=0'
 EXC_MOVIE_INFO = EXC_BASEURL + 'content/%s'
@@ -618,7 +618,7 @@ class EXCAgent(Agent.Movies):
         for member in starring:
             try:
                 role = metadata.roles.new()
-                role.actor = member.text_content().strip()
+                role.name = member.text_content().strip()
                 photo = member.get('href').strip()
                 # Commenting out as not used
                 # photohtml = HTML.ElementFromURL(photo)
@@ -690,7 +690,7 @@ class EXCAgent(Agent.Movies):
             pass
         try:
             for x in range(len(metadata.roles)):
-                Log('    Starring:............' + metadata.roles[x].actor)
+                Log('    Starring:............' + metadata.roles[x].name)
         except:
             pass
 
