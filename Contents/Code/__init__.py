@@ -5,12 +5,12 @@ from datetime import datetime
 
 # this code was borrowed from the Excalibur Films Agent. April 9 2013
 # URLS
-VERSION_NO = '1.2015.03.28.2'
+VERSION_NO = '1.2016.06.30.1'
 EXC_BASEURL = 'http://www.data18.com/'
 EXC_SEARCH_MOVIES = EXC_BASEURL + 'search/?k=%s&t=0'
 EXC_MOVIE_INFO = EXC_BASEURL + 'content/%s'
 XP_SCENE_LINK = ''.join(['//div[contains(@class,"bscene")]',
-                         '//span//a[contains(@href,"content")]'])
+                         '//p//a[contains(@href,"content")]'])
 USER_AGENT = ''.join(['Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.2; ',
                       'Trident/4.0; SLCC2; .NET CLR 2.0.50727; ',
                       '.NET CLR 3.5.30729; .NET CLR 3.0.30729; ',
