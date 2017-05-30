@@ -11,12 +11,13 @@ EXC_SEARCH_MOVIES = EXC_BASEURL + 'search/?k=%s&t=0'
 EXC_MOVIE_INFO = EXC_BASEURL + 'content/%s'
 XP_SCENE_LINK = ''.join(['//div[contains(@class,"bscene")]',
                          '//p//a[contains(@href,"content")]'])
-USER_AGENT = ''.join(['Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.2; ',
-                      'Trident/4.0; SLCC2; .NET CLR 2.0.50727; ',
-                      '.NET CLR 3.5.30729; .NET CLR 3.0.30729; ',
-                      'Media Center PC 6.0)'])
+USER_AGENT = ''.join(['Mozilla/5.0 (Windows NT 6.1) ',
+                      'AppleWebKit/537.36 (KHTML, like Gecko) ',
+                      'Chrome/41.0.2228.0 ',
+                      'Safari/537.36'])
 
 titleFormats = r'DVD|Blu-Ray|BR|Combo|Pack'
+REQUEST_DELAY = 9
 
 XPATHS = {
     # Parse Document
@@ -62,7 +63,7 @@ XPATHS = {
 }
 
 def Start():
-    HTTP.CacheTime = CACHE_1DAY
+    HTTP.CacheTime = 0
     HTTP.SetHeader('User-agent', USER_AGENT)
 
 
@@ -169,7 +170,7 @@ def search_na(results, media_title, year, lang):
     Log('Search URL: ' + searchURL)
 
     try:
-        search_results = HTML.ElementFromURL(searchURL)
+        search_results = HTML.ElementFromURL(searchURL, sleep=REQUEST_DELAY)
     except:
         searchURL = EXC_BASEURL + 'dev/' + query_actor
         Log('Search URL: ' + searchURL)
@@ -300,7 +301,7 @@ class EXCAgent(Agent.Movies):
 
             searchUrl = EXC_SEARCH_MOVIES % query
             Log('search url: ' + searchUrl)
-            searchResults = HTML.ElementFromURL(searchUrl)
+            searchResults = HTML.ElementFromURL(searchUrl, sleep=REQUEST_DELAY)
             # Commenting out as not being used
             # searchTitle = searchResults.xpath('//title')[0].text_content()
             count = 0
